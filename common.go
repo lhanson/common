@@ -36,7 +36,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dmotylev/goproperties"
+	properties "github.com/dmotylev/goproperties"
 )
 
 const (
@@ -182,9 +182,8 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 	return files
 }
 
-// GetConfigurationPrefix returns the configuration directory prefix
-// $GAUGE_HOME or $home/.gauge/config
-func GetConfigurationDir() (string, error) {
+// GetLegacyConfigurationDir returns the location of pre-XDG-compliant configuration, if present
+func GetLegacyConfigurationDir() (string, error) {
 	gaugeHome := os.Getenv(GaugeHome)
 	if gaugeHome != "" {
 		return filepath.Join(gaugeHome, config), nil
@@ -195,7 +194,7 @@ func GetConfigurationDir() (string, error) {
 	if isWindows() {
 		appDataPath := os.Getenv(appData)
 		if appDataPath == "" {
-			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find App Data directory.")
+			return "", fmt.Errorf("cannot locate gauge shared file, could not find App Data directory")
 		}
 		configDir = filepath.Join(appDataPath, ProductName, config)
 	} else {
@@ -208,6 +207,57 @@ func GetConfigurationDir() (string, error) {
 	}
 
 	return "", fmt.Errorf("Can't find configuration files")
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+// GetConfigurationDir returns the configuration directory
+// TODO update docs
+// $GAUGE_HOME or $home/.gauge/config
+func GetConfigurationDir() (string, error) {
+	legacyConfigDir, _ := GetLegacyConfigurationDir()
+	fmt.Printf("Legacy config dir is %s\n", legacyConfigDir)
+	fmt.Printf("Testing for config file\n")
+	if legacyConfigDir != "" && fileExists(filepath.Join(legacyConfigDir, GaugePropertiesFile)) {
+		fmt.Printf("Found legacy configuration at %s, using old location of %s\n", filepath.Join(legacyConfigDir, GaugePropertiesFile), legacyConfigDir)
+		// Found existing configuration in a legacy location, continue using it
+		return legacyConfigDir, nil
+	}
+
+	fmt.Printf("TODO\n")
+	return legacyConfigDir, nil
+	// Possible locations:
+	//
+	// * $GAUGE_HOME/config
+	// * $APPDATA/gauge/config (windows)
+	// * $HOME/.gauge/config (windows)
+
+	// TODO: New
+	/*
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// TODO: use XDG
+		xdg := xdg.New("gauge", "")
+		configFile := xdg.QueryConfig("gauge.properties")
+		if configFile == "" {
+			// Fall back to $HOME/.guagefor legacy compatibility
+			configFile = path.Join(usr.HomeDir, ".gauge", "config", "gauge.properties")
+			fmt.Printf("Found standard-compliant config at %s\n", configFile)
+		} else {
+			fmt.Printf("Falling back to config file at %s\n", configFile)
+		}
+		fmt.Printf("Config file is %s\n", configFile)
+
+	*/
 }
 
 // GetInstallationPrefix returns the installation directory prefix
@@ -295,6 +345,7 @@ func GetPluginInstallPrefixes() ([]string, error) {
 }
 
 // GetGaugeHomeDirectory returns GAUGE_HOME. This is where all the plugins are installed
+// TODO: use XDG stuff here
 func GetGaugeHomeDirectory() (string, error) {
 	customPluginRoot := os.Getenv(GaugeHome)
 	if customPluginRoot != "" {

@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	filet "github.com/Flaque/filet"
 	. "github.com/go-check/check"
 )
 
@@ -361,6 +362,72 @@ func (s *MySuite) TestGetGaugeHomeDirectoryWhen_GAUGE_HOME_IsNotSet(c *C) {
 		c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), DotGauge))
 	}
 }
+
+func (s *MySuite) TestGetLegacyConfigurationDir(c *C) {
+	defer filet.CleanUp(c)
+
+	// Create a temporary directory and use it as our $HOME
+	tmpDir := filet.TmpDir(c, "")
+	os.Setenv("HOME", tmpDir)
+
+	// Create a sample configuration file
+	// if isWindows() {
+	// fmt.Printf("A) Creating %s\n", filepath.Join(tmpDir, "AppData", ProductName, config, GaugePropertiesFile))
+	// filet.File(c, filepath.Join(tmpDir, "AppData", ProductName, config, GaugePropertiesFile), "# Sample gauge.properties")
+	// } else {
+	filename := filepath.Join(tmpDir, GaugePropertiesFile)
+	// filename := filepath.Join(tmpDir, DotGauge, config, GaugePropertiesFile)
+	fmt.Printf("Creating file %s\n", filename)
+	// TODO: working here: this fails
+	configFile := filet.TmpFile(c, filename, "")
+	// configFile := filet.TmpFile(c, filename, "# Sample gauge.properties")
+	// configFile := filet.TmpFile(c, filepath.Join(tmpDir, DotGauge, config, GaugePropertiesFile), "# Sample gauge.properties")
+	// configFile := filet.TmpFile(c, filepath.Join(tmpDir, DotGauge, config, GaugePropertiesFile), "# Sample gauge.properties")
+	fmt.Printf("Config file: %s\n", configFile)
+	// fmt.Printf("File exists: %v\n", filet.Exists(c, configFile))
+	// }
+
+	// Create a config file here
+	// configDir, err := GetConfigurationDir()
+	// c.Assert(err, NotNil)
+	// fmt.Printf("Test result, config dir is %s\n", configDir)
+
+	// c.Assert(err, Equals, nil)
+	// if isWindows() {
+	// c.Assert(home, Equals, filepath.Join(os.Getenv(appData), ProductName))
+	// } else {
+	// c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), DotGauge))
+	// }
+}
+
+/* TODO
+func (s *MySuite) TestGetLegacyConfigurationDir(c *C) {
+}
+*/
+/*
+func (s *MySuite) TestGetGaugeHomeDirectory(c *C) {
+	path := "value string"
+	os.Setenv(GaugeHome, path)
+
+	home, err := GetGaugeHomeDirectory()
+
+	c.Assert(err, Equals, nil)
+	c.Assert(home, Equals, path)
+}
+
+func (s *MySuite) TestGetGaugeHomeDirectoryWhen_GAUGE_HOME_IsNotSet(c *C) {
+	os.Setenv(GaugeHome, "")
+
+	home, err := GetGaugeHomeDirectory()
+
+	c.Assert(err, Equals, nil)
+	if isWindows() {
+		c.Assert(home, Equals, filepath.Join(os.Getenv(appData), ProductName))
+	} else {
+		c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), DotGauge))
+	}
+}
+*/
 
 func getAbsPath(path string) string {
 	abs, _ := filepath.Abs(path)
